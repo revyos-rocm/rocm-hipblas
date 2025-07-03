@@ -38,8 +38,6 @@ ROCM_MATH_CMAKE_PARAMS += -DCMAKE_INSTALL_RPATH_USE_LINK_PATH=FALSE
 ROCM_MATH_CMAKE_PARAMS += -DBUILD_FILE_REORG_BACKWARD_COMPATIBILITY=OFF
 
 # GPU_TARGETS="gfx908:xnack-;gfx90a:xnack-;gfx90a:xnack+;gfx940;gfx941;gfx942;gfx1030;gfx1100"
-# Tailor target list to accelerate the build proccess.
-GPU_TARGETS="gfx942"
 
 %:
 	dh $@
@@ -47,7 +45,6 @@ GPU_TARGETS="gfx942"
 override_dh_auto_configure:
 	cmake $(REVYOS_ROCM_CMAKE_PARAMS) \
 		$(ROCM_MATH_CMAKE_PARAMS) \
-		-DAMDGPU_TARGETS=$(GPU_TARGETS) \
 		-DHIP_PLATFORM=amd \
 		-DUSE_CUDA=OFF \
 		-DBUILD_CLIENTS_SAMPLES=OFF \
