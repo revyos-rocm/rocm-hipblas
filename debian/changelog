@@ -1,6 +1,6 @@
 rocm-hipblas (6.2.4-2) unstable; urgency=medium
 
-  * Enable all GPU targets.
+  * Update GPU targets.
 
  --  <chenxuan@iscas.ac.cn>  Thu, 03 Jul 2025 17:18:22 +0800
 
