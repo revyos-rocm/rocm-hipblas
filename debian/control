@@ -7,6 +7,7 @@ Build-Depends:
  debhelper-compat (= 13),
  cmake,
  libblas-dev,
+ liblapack-dev,
  pkg-config,
  rocm-cmake,
  rocm-core,
@@ -25,7 +26,8 @@ Architecture: any
 Depends:
  ${shlibs:Depends},
  ${misc:Depends},
- libblas-dev,
+ libblas3,
+ libscalapack-openmpi2.2,
  rocm-cmake,
  rocm-core,
  rocm-env,
@@ -47,7 +49,8 @@ Architecture: any
 Depends:
  ${shlibs:Depends},
  ${misc:Depends},
- libblas3,
+ libblas-dev,
+ liblapack-dev,
  libsuitesparse-dev,
  rocm-hip-on-rocclr-dev,
  rocm-hipblas,
