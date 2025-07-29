@@ -1,3 +1,9 @@
+rocm-hipblas (6.4.2-1) trixie; urgency=medium
+
+  * Release 6.4.2-1
+
+ --  <chenxuan@iscas.ac.cn>  Tue, 29 Jul 2025 10:04:06 +0800
+
 rocm-hipblas (6.2.4-4) unstable; urgency=medium
 
   * Build with tests.

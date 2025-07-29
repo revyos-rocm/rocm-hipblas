@@ -18,8 +18,8 @@ Build-Depends:
  rocm-rocsolver-dev,
 Standards-Version: 4.7.0
 Homepage: https://github.com/ROCm/hipBLAS
-Vcs-Browser: https://github.com/r-rocm/rocm-hipblas
-Vcs-Git: https://github.com/r-rocm/rocm-hipblas.git
+Vcs-Browser: https://github.com/revyos-rocm/rocm-hipblas
+Vcs-Git: https://github.com/revyos-rocm/rocm-hipblas.git
 
 Package: rocm-hipblas
 Architecture: any
