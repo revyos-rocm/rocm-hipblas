@@ -3,6 +3,27 @@
 Documentation for hipBLAS is available at
 [https://rocm.docs.amd.com/projects/hipBLAS/en/latest/](https://rocm.docs.amd.com/projects/hipBLAS/en/latest/).
 
+## hipBLAS 2.4.0 for ROCm 6.4.0
+
+### Changed
+
+* Updated build dependencies
+
+### Resolved issues
+
+* Fixed Windows reference library interface for rocSOLVER functions for hipBLAS clients
+
+## hipBLAS 2.3.0 for ROCm 6.3.0
+
+### Added
+
+* Level 3 functions have an additional ILP64 API for both C and FORTRAN (_64 name suffix) with int64_t function arguments.
+
+### Changed
+
+* amdclang is used as the default compiler instead of g++
+* Added a dependency on the hipblas-common package
+
 ## hipBLAS 2.2.0 for ROCm 6.2.0
 
 ### Additions

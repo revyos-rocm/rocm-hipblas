@@ -1,5 +1,5 @@
 # ########################################################################
-# Copyright (C) 2016-2024 Advanced Micro Devices, Inc. All rights reserved.
+# Copyright (C) 2016-2025 Advanced Micro Devices, Inc. All rights reserved.
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -65,6 +65,9 @@ add_library( hipblas
 add_library( roc::hipblas ALIAS hipblas )
 
 set(static_depends)
+
+find_package( hipblas-common REQUIRED CONFIG PATHS ${ROCM_PATH})
+target_link_libraries( hipblas INTERFACE roc::hipblas-common )
 
 # Build hipblas from source on AMD platform
 if(HIP_PLATFORM STREQUAL amd)
@@ -136,6 +139,7 @@ target_include_directories( hipblas
           $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/include/hipblas>
           $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/include>
           $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+          $<BUILD_INTERFACE:${HIPBLAS-COMMON_INCLUDE_DIRS}>
   PRIVATE
           ${CMAKE_CURRENT_SOURCE_DIR}/include
           ${CMAKE_CURRENT_SOURCE_DIR}
@@ -181,19 +185,21 @@ rocm_install_targets(
 )
 #         PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ GROUP_EXECUTE GROUP_READ WORLD_EXECUTE WORLD_READ
 
-if(HIP_PLATFORM STREQUAL amd)
-    rocm_export_targets(
-        TARGETS roc::hipblas
-	DEPENDS PACKAGE hip
-	STATIC_DEPENDS ${static_depends}
-	NAMESPACE roc::
-    )
+if(HIP_PLATFORM STREQUAL amd )
+  rocm_export_targets(
+    TARGETS roc::hipblas
+    DEPENDS PACKAGE hip
+    DEPENDS PACKAGE hipblas-common
+    STATIC_DEPENDS ${static_depends}
+    NAMESPACE roc::
+  )
 else( )
-    rocm_export_targets(
-        TARGETS roc::hipblas
-	DEPENDS PACKAGE HIP
-	NAMESPACE roc::
-    )
+  rocm_export_targets(
+    TARGETS roc::hipblas
+    DEPENDS PACKAGE HIP
+    DEPENDS PACKAGE hipblas-common
+    NAMESPACE roc::
+  )
 endif( )
 
 # Force installation of .f90 module files
