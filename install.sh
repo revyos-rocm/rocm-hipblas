@@ -166,7 +166,7 @@ install_packages( )
   local library_dependencies_centos_rhel=( "epel-release" "make" "gcc-c++" "rpm-build" )
   local library_dependencies_centos_rhel_8=( "epel-release" "make" "gcc-c++" "rpm-build" )
   local library_dependencies_fedora=( "make" "gcc-c++" "libcxx-devel" "rpm-build" )
-  local library_dependencies_sles=( "make" "gcc-c++" "libcxxtools9" "rpm-build" )
+  local library_dependencies_sles=( "make" "gcc-c++" "rpm-build" )
 
   if [[ $HIP_PLATFORM == "nvidia" ]]; then
     # Ideally, this could be cuda-cublas-dev, but the package name has a version number in it
@@ -248,6 +248,11 @@ install_packages( )
 
     sles|opensuse-leap)
 #     elevate_if_not_root zypper -y update
+      if (( "${VERSION_ID%%.*}" >= "15" )); then
+        library_dependencies_sles+=( "libcxxtools10" )
+      else
+        library_dependencies_sles+=( "libcxxtools9" )
+      fi
       install_zypper_packages "${library_dependencies_sles[@]}"
       ;;
     *)
@@ -408,7 +413,7 @@ declare -a cmake_client_options
 # check if we have a modern version of getopt that can handle whitespace and long parameters
 getopt -T
 if [[ $? -eq 4 ]]; then
-  GETOPT_PARSE=$(getopt --name "${0}" --longoptions help,install,clients,no-solver,dependencies,debug,relwithdebinfo,cmake_install,cuda,use-cuda,installcuda,installcudaversion:,rmake_invoked,rocblas:,rocblas-path:,rocsolver-path:,address-sanitizer, --options :rhickndgb: -- "$@")
+  GETOPT_PARSE=$(getopt --name "${0}" --longoptions help,install,clients,no-solver,dependencies,debug,relwithdebinfo,cmake_install,cuda,use-cuda,installcuda,installcudaversion:,rmake_invoked,rocblas:,rocblas-path:,rocsolver-path:,address-sanitizer:, --options :rhickndgb: -- "$@")
 else
   echo "Need a new version of getopt"
   exit 1
@@ -478,6 +483,8 @@ while true; do
     --prefix)
         install_prefix=${2}
         shift 2 ;;
+    --address-sanitizer)
+        shift 2 ;;
     --rmake_invoked)
         rmake_invoked=true
         shift ;;
@@ -516,7 +523,7 @@ fc="gfortran"
 # #################################################
 if [[ "${install_dependencies}" == true ]]; then
 
-  CMAKE_VERSION=$(cmake --version | grep -oP '(?<=version )[^ ]*' )
+  CMAKE_VERSION=$(${cmake_executable} --version | grep -oP '(?<=version )[^ ]*' )
 
   install_packages
 
