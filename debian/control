@@ -32,10 +32,8 @@ Depends:
  rocm-core,
  rocm-env,
  rocm-hip-on-rocclr,
- rocm-hipsparse,
  rocm-rocblas,
  rocm-rocsolver,
- rocm-rocsparse,
 Description: ROCm BLAS marshalling library  - binary
  hipBLAS is a Basic Linear Algebra Subprograms (BLAS) marshalling library with
  multiple supported backends. It sits between your application and a 'worker'
@@ -49,15 +47,10 @@ Architecture: any
 Depends:
  ${shlibs:Depends},
  ${misc:Depends},
- libblas-dev,
- liblapack-dev,
- libsuitesparse-dev,
  rocm-hip-on-rocclr-dev,
  rocm-hipblas,
- rocm-hipsparse-dev,
  rocm-rocblas-dev,
  rocm-rocsolver-dev,
- rocm-rocsparse-dev,
 Description: ROCm BLAS marshalling library  - dev
  hipBLAS is a Basic Linear Algebra Subprograms (BLAS) marshalling library with
  multiple supported backends. It sits between your application and a 'worker'
