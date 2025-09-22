@@ -1,5 +1,5 @@
 /* ************************************************************************
- * Copyright (C) 2016-2024 Advanced Micro Devices, Inc. All rights reserved.
+ * Copyright (C) 2016-2025 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -60,6 +60,7 @@ inline void testname_gemm_strided_batched_ex(const Arguments& arg, std::string& 
 template <typename Ti, typename To = Ti, typename Tex = To>
 void testing_gemm_strided_batched_ex_bad_arg(const Arguments& arg)
 {
+    using Ts = hipblas_internal_type<Tex>;
     // Note: hipblasGemmEx and hipblasGemmExWithFlags are essentially the exact same.
     //       Only testing WithFlags version as it has slightly more functionality.
     auto hipblasGemmStridedBatchedExFn    = arg.api == FORTRAN
@@ -71,16 +72,12 @@ void testing_gemm_strided_batched_ex_bad_arg(const Arguments& arg)
 
     hipblasLocalHandle handle(arg);
 
-    hipblasDatatype_t aType = arg.a_type;
-    hipblasDatatype_t bType = arg.b_type;
-    hipblasDatatype_t cType = arg.c_type;
-#ifdef HIPBLAS_V2
+    hipDataType          aType       = arg.a_type;
+    hipDataType          bType       = arg.b_type;
+    hipDataType          cType       = arg.c_type;
     hipblasComputeType_t computeType = arg.compute_type_gemm;
-#else
-    hipblasDatatype_t computeType  = arg.compute_type;
-#endif
-    hipblasGemmFlags_t flags = HIPBLAS_GEMM_FLAGS_NONE;
-    hipblasGemmAlgo_t  algo  = HIPBLAS_GEMM_DEFAULT;
+    hipblasGemmFlags_t   flags       = HIPBLAS_GEMM_FLAGS_NONE;
+    hipblasGemmAlgo_t    algo        = HIPBLAS_GEMM_DEFAULT;
 
     int64_t M           = 101;
     int64_t N           = 100;
@@ -108,15 +105,17 @@ void testing_gemm_strided_batched_ex_bad_arg(const Arguments& arg)
     device_strided_batch_matrix<To> dC(M, N, ldc, stride_C, batch_count);
 
     device_vector<Tex> d_alpha(1), d_beta(1), d_one(1), d_zero(1);
-    Tex                h_alpha(1), h_beta(2), h_one(1), h_zero(0);
+    Ts                 h_alpha{1}, h_beta{2}, h_one{1}, h_zero{0};
 
     if constexpr(std::is_same_v<Tex, hipblasHalf>)
         h_one = float_to_half(1.0f);
+    else if constexpr(is_complex<Tex>)
+        h_one = {1, 0};
 
-    const Tex* alpha = &h_alpha;
-    const Tex* beta  = &h_beta;
-    const Tex* one   = &h_one;
-    const Tex* zero  = &h_zero;
+    const Ts* alpha = &h_alpha;
+    const Ts* beta  = &h_beta;
+    const Ts* one   = &h_one;
+    const Ts* zero  = &h_zero;
 
     for(auto pointer_mode : {HIPBLAS_POINTER_MODE_HOST, HIPBLAS_POINTER_MODE_DEVICE})
     {
@@ -312,6 +311,7 @@ void testing_gemm_strided_batched_ex_bad_arg(const Arguments& arg)
 template <typename Ti, typename To = Ti, typename Tex = To>
 void testing_gemm_strided_batched_ex(const Arguments& arg)
 {
+    using Ts = hipblas_internal_type<Tex>;
     auto hipblasGemmStridedBatchedExFn
         = arg.api == FORTRAN ? hipblasGemmStridedBatchedExFortran : hipblasGemmStridedBatchedEx;
     auto hipblasGemmStridedBatchedExWithFlagsFn = arg.api == FORTRAN
@@ -335,15 +335,11 @@ void testing_gemm_strided_batched_ex(const Arguments& arg)
     int64_t            ldb    = arg.ldb;
     int64_t            ldc    = arg.ldc;
 
-    hipblasDatatype_t a_type = arg.a_type;
-    hipblasDatatype_t b_type = arg.b_type;
-    hipblasDatatype_t c_type = arg.c_type;
-#ifdef HIPBLAS_V2
+    hipDataType          a_type       = arg.a_type;
+    hipDataType          b_type       = arg.b_type;
+    hipDataType          c_type       = arg.c_type;
     hipblasComputeType_t compute_type = arg.compute_type_gemm;
-#else
-    hipblasDatatype_t compute_type = arg.compute_type;
-#endif
-    hipblasGemmFlags_t flags = hipblasGemmFlags_t(arg.flags);
+    hipblasGemmFlags_t   flags        = hipblasGemmFlags_t(arg.flags);
 
     int64_t batch_count = arg.batch_count;
 
@@ -465,7 +461,7 @@ void testing_gemm_strided_batched_ex(const Arguments& arg)
                         M,
                         N,
                         K,
-                        &h_alpha_Tex,
+                        reinterpret_cast<Ts*>(&h_alpha_Tex),
                         dA,
                         a_type,
                         lda,
@@ -474,7 +470,7 @@ void testing_gemm_strided_batched_ex(const Arguments& arg)
                         b_type,
                         ldb,
                         stride_B,
-                        &h_beta_Tex,
+                        reinterpret_cast<Ts*>(&h_beta_Tex),
                         dC,
                         c_type,
                         ldc,

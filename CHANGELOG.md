@@ -3,7 +3,31 @@
 Documentation for hipBLAS is available at
 [https://rocm.docs.amd.com/projects/hipBLAS/en/latest/](https://rocm.docs.amd.com/projects/hipBLAS/en/latest/).
 
-## hipBLAS 2.4.0 for ROCm 6.4.0
+## hipBLAS 3.0.0 for ROCm 7.0.0
+
+### Added
+
+* Added the `hipblasSetWorkspace()` API
+* Support for codecoverage tests
+
+### Changed
+
+* HIPBLAS_V2 API is now the only available API using `hipComplex` and `hipDatatype` types
+* Documentation updates
+* Verbose compilation for `hipblas.cpp`
+
+### Removed
+
+* `hipblasDatatype_t` type
+* `hipComplex` and `hipDoubleComplex` types
+* Support code for non-production gfx targets
+
+### Resolved issues
+
+* The build time `CMake` configuration for the dependency on `hipBLAS-common` is fixed
+* Compiler warnings for unhandled enums have been resolved
+
+##  hipBLAS 2.4.0 for ROCm 6.4.0
 
 ### Changed
 

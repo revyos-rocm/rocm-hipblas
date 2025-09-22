@@ -1,5 +1,5 @@
 /* ************************************************************************
- * Copyright (C) 2016-2024 Advanced Micro Devices, Inc. All rights reserved.
+ * Copyright (C) 2016-2025 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -80,12 +80,12 @@ char type2char<double>()
 }
 
 //  template<>
-//  char type2char<hipblasComplex>(){
+//  char type2char<std::complex<float>>(){
 //      return 'c';
 //  }
 
 //  template<>
-//  char type2char<hipblasDoubleComplex>(){
+//  char type2char<std::complex<double>>(){
 //      return 'z';
 //  }
 
@@ -102,13 +102,13 @@ int type2int<double>(double val)
 }
 
 template <>
-int type2int<hipblasComplex>(hipblasComplex val)
+int type2int<std::complex<float>>(std::complex<float> val)
 {
     return (int)val.real();
 }
 
 template <>
-int type2int<hipblasDoubleComplex>(hipblasDoubleComplex val)
+int type2int<std::complex<double>>(std::complex<double> val)
 {
     return (int)val.real();
 }
@@ -207,15 +207,15 @@ hipblasLocalHandle::hipblasLocalHandle(const Arguments& arg)
         status = hipblasSetAtomicsMode(m_handle, hipblasAtomicsMode_t(arg.atomics_mode));
     if(status == HIPBLAS_STATUS_SUCCESS)
     {
-        /*
         // If the test specifies user allocated workspace, allocate and use it
         if(arg.user_allocated_workspace)
         {
             if((hipMalloc)(&m_memory, arg.user_allocated_workspace) != hipSuccess)
                 throw std::bad_alloc();
-            status = rocblas_set_workspace(m_handle, m_memory, arg.user_allocated_workspace);
+            status = hipblasSetWorkspace(m_handle, m_memory, arg.user_allocated_workspace);
+            if(status != HIPBLAS_STATUS_SUCCESS)
+                throw std::runtime_error(hipblasStatusToString(status));
         }
-    */
     }
     else
     {
@@ -230,7 +230,6 @@ hipblasLocalHandle::~hipblasLocalHandle()
 {
     if(m_memory)
     {
-        // m_memory never used currently
         auto hipStatus = hipFree(m_memory);
         if(hipStatus != hipSuccess)
         {
@@ -460,17 +459,13 @@ hipblasClientProcessor getArch()
     {
         return hipblasClientProcessor::gfx90a;
     }
-    else if(deviceString.find("gfx940") != std::string::npos)
-    {
-        return hipblasClientProcessor::gfx940;
-    }
-    else if(deviceString.find("gfx941") != std::string::npos)
-    {
-        return hipblasClientProcessor::gfx941;
-    }
     else if(deviceString.find("gfx942") != std::string::npos)
     {
         return hipblasClientProcessor::gfx942;
+    }
+    else if(deviceString.find("gfx950") != std::string::npos)
+    {
+        return hipblasClientProcessor::gfx950;
     }
     else if(deviceString.find("gfx1010") != std::string::npos)
     {

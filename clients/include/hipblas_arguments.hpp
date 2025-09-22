@@ -1,5 +1,5 @@
 /* ************************************************************************
- * Copyright (C) 2016-2024 Advanced Micro Devices, Inc. All rights reserved.
+ * Copyright (C) 2016-2025 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -25,7 +25,6 @@
 #ifndef _HIPBLAS_ARGUMENTS_HPP_
 #define _HIPBLAS_ARGUMENTS_HPP_
 
-#include "complex.hpp"
 #include "hipblas.h"
 #include "hipblas_datatype2string.hpp"
 #include "utility.h"
@@ -93,15 +92,15 @@ inline hipblasHalf convert_alpha_beta<hipblasHalf>(double r, double i)
 }
 
 template <>
-inline hipblasComplex convert_alpha_beta<hipblasComplex>(double r, double i)
+inline std::complex<float> convert_alpha_beta<std::complex<float>>(double r, double i)
 {
-    return hipblasComplex(r, i);
+    return std::complex<float>(r, i);
 }
 
 template <>
-inline hipblasDoubleComplex convert_alpha_beta<hipblasDoubleComplex>(double r, double i)
+inline std::complex<double> convert_alpha_beta<std::complex<double>>(double r, double i)
 {
-    return hipblasDoubleComplex(r, i);
+    return std::complex<double>(r, i);
 }
 
 /*! \brief Class used to parse command arguments in both benchmark & gtest   */
@@ -123,16 +122,15 @@ struct Arguments
     int64_t ldc = 128;
     int64_t ldd = 128;
 
-    hipblasDatatype_t a_type = HIPBLAS_R_32F;
-    hipblasDatatype_t b_type = HIPBLAS_R_32F;
-    hipblasDatatype_t c_type = HIPBLAS_R_32F;
-    hipblasDatatype_t d_type = HIPBLAS_R_32F;
+    hipDataType a_type = HIP_R_32F;
+    hipDataType b_type = HIP_R_32F;
+    hipDataType c_type = HIP_R_32F;
+    hipDataType d_type = HIP_R_32F;
 
-    // used for all _ex functions except for gemmEx. Used in gemmEx
-    // without HIPBLAS_V2 define.
-    hipblasDatatype_t compute_type = HIPBLAS_R_32F;
+    // used for all _ex functions except for gemmEx
+    hipDataType compute_type = HIP_R_32F;
 
-    // used for gemmEx with HIPBLAS_V2 define
+    // used for gemmEx
     hipblasComputeType_t compute_type_gemm = HIPBLAS_COMPUTE_32F;
 
     int64_t incx = 1;
@@ -147,6 +145,8 @@ struct Arguments
     hipblasStride stride_d; //  stride_d > ldd * N
     hipblasStride stride_x;
     hipblasStride stride_y;
+
+    size_t user_allocated_workspace;
 
     int start = 1024;
     int end   = 10240;
@@ -233,6 +233,7 @@ struct Arguments
     OPER(stride_d) SEP               \
     OPER(stride_x) SEP               \
     OPER(stride_y) SEP               \
+    OPER(user_allocated_workspace) SEP \
     OPER(start) SEP                  \
     OPER(end) SEP                    \
     OPER(step) SEP                   \
@@ -355,14 +356,14 @@ enum hipblas_argument : int
 namespace ArgumentsHelper
 {
     template <hipblas_argument>
-    static constexpr auto apply = nullptr;
+    inline constexpr auto apply = nullptr;
 
     // Macro defining specializations for specific arguments
     // e_alpha, e_beta, and datatypes get turned into negative sentinel value specializations
     // clang-format off
 #define APPLY(NAME)                                                                         \
     template <>                                                                             \
-    HIPBLAS_CLANG_STATIC constexpr auto                                                     \
+    inline constexpr auto                                                     \
         apply<e_##NAME == e_alpha ? hipblas_argument(-1)                                    \
                                   : e_##NAME == e_beta ? hipblas_argument(-2)               \
                                   : e_##NAME == e_a_type ? hipblas_argument(-3)             \
@@ -378,47 +379,47 @@ namespace ArgumentsHelper
 
     // Specialization for e_alpha
     template <>
-    HIPBLAS_CLANG_STATIC constexpr auto apply<e_alpha> =
+    inline constexpr auto apply<e_alpha> =
         [](auto&& func, const Arguments& arg, auto T) {
             func("alpha", arg.get_alpha<decltype(T)>());
         };
 
     // Specialization for e_beta
     template <>
-    HIPBLAS_CLANG_STATIC constexpr auto apply<e_beta> =
+    inline constexpr auto apply<e_beta> =
         [](auto&& func, const Arguments& arg, auto T) {
             func("beta", arg.get_beta<decltype(T)>());
         };
 
     // Specialization for datatypes
     template <>
-    HIPBLAS_CLANG_STATIC constexpr auto apply<e_a_type> =
+    inline constexpr auto apply<e_a_type> =
         [](auto&& func, const Arguments& arg, auto T) {
-            func("a_type", hipblas_datatype2string(arg.a_type));
+            func("a_type", hip_datatype2string(arg.a_type));
         };
 
     template <>
-    HIPBLAS_CLANG_STATIC constexpr auto apply<e_b_type> =
+    inline constexpr auto apply<e_b_type> =
         [](auto&& func, const Arguments& arg, auto T) {
-            func("b_type", hipblas_datatype2string(arg.b_type));
+            func("b_type", hip_datatype2string(arg.b_type));
         };
 
     template <>
-    HIPBLAS_CLANG_STATIC constexpr auto apply<e_c_type> =
+    inline constexpr auto apply<e_c_type> =
         [](auto&& func, const Arguments& arg, auto T) {
-            func("c_type", hipblas_datatype2string(arg.c_type));
+            func("c_type", hip_datatype2string(arg.c_type));
         };
 
     template <>
-    HIPBLAS_CLANG_STATIC constexpr auto apply<e_d_type> =
+    inline constexpr auto apply<e_d_type> =
         [](auto&& func, const Arguments& arg, auto T) {
-            func("d_type", hipblas_datatype2string(arg.d_type));
+            func("d_type", hip_datatype2string(arg.d_type));
         };
 
     template <>
-    HIPBLAS_CLANG_STATIC constexpr auto apply<e_compute_type> =
+    inline constexpr auto apply<e_compute_type> =
         [](auto&& func, const Arguments& arg, auto T) {
-            func("compute_type", hipblas_datatype2string(arg.compute_type));
+            func("compute_type", hip_datatype2string(arg.compute_type));
         };
 };
     // clang-format on

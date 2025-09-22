@@ -1,5 +1,5 @@
 # ########################################################################
-# Copyright (C) 2016-2024 Advanced Micro Devices, Inc. All rights reserved.
+# Copyright (C) 2016-2025 Advanced Micro Devices, Inc. All rights reserved.
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -66,7 +66,7 @@ list( APPEND CMAKE_PREFIX_PATH ${ROCM_PATH}/lib/cmake/hip /opt/rocm /opt/rocm/ll
 # rocm-cmake contains common cmake code for rocm projects to help setup and install
 include(dependencies)
 
-set ( VERSION_STRING "2.4.0" )
+set ( VERSION_STRING "3.0.0" )
 rocm_setup_version( VERSION ${VERSION_STRING} )
 
 option( BUILD_VERBOSE "Output additional build information" OFF )
@@ -115,8 +115,8 @@ endif()
 
 option(BUILD_CODE_COVERAGE "Build with code coverage enabled" OFF)
 if(BUILD_CODE_COVERAGE)
-  add_compile_options(-fprofile-arcs -ftest-coverage)
-  add_link_options(--coverage)
+  #add_compile_options(-fprofile-arcs -ftest-coverage)
+  #add_link_options(--coverage)
 endif()
 
 option(BUILD_ADDRESS_SANITIZER "Build with address sanitizer enabled" OFF)
@@ -151,7 +151,7 @@ if( BUILD_CLIENTS_SAMPLES OR BUILD_CLIENTS_TESTS OR BUILD_CLIENTS_BENCHMARKS )
   message(STATUS "OS: ${CLIENTS_OS} ${CLIENTS_OS_VERSION}")
   set(GFORTRAN_RPM "libgfortran4")
   set(GFORTRAN_DEB "libgfortran4")
-  if(CLIENTS_OS STREQUAL "centos" OR CLIENTS_OS STREQUAL "rhel")
+  if(CLIENTS_OS STREQUAL "centos" OR CLIENTS_OS STREQUAL "rhel" OR CLIENTS_OS STREQUAL "almalinux")
     if(CLIENTS_OS_VERSION VERSION_GREATER_EQUAL "8")
       set(GFORTRAN_RPM "libgfortran")
     endif()
@@ -204,22 +204,29 @@ endif( )
 
 # Package specific CPACK vars
 if(HIP_PLATFORM STREQUAL amd)
-  set(rocblas_minimum 4.4.0)
-  set(rocsolver_minimum 3.28.0)
+  set(rocblas_minimum 5.0.0)
+  set(rocsolver_minimum 3.30.0)
   rocm_package_add_dependencies(SHARED_DEPENDS "rocblas >= ${rocblas_minimum}" "rocsolver >= ${rocsolver_minimum}")
   rocm_package_add_rpm_dependencies(STATIC_DEPENDS "rocblas-static-devel >= ${rocblas_minimum}" "rocsolver-static-devel >= ${rocsolver_minimum}")
   rocm_package_add_deb_dependencies(STATIC_DEPENDS "rocblas-static-dev >= ${rocblas_minimum}" "rocsolver-static-dev >= ${rocsolver_minimum}")
 endif( )
 
-set(hipblas_common_minimum 1.0.0)
-rocm_package_add_deb_dependencies(COMPONENT devel DEPENDS "hipblas-common-dev >= ${hipblas_common_minimum}") 
-rocm_package_add_rpm_dependencies(COMPONENT devel DEPENDS "hipblas-common-devel >= ${hipblas_common_minimum}")
+set(hipblas_common_minimum 1.1.0)
+if(BUILD_SHARED_LIBS)
+  rocm_package_add_deb_dependencies(COMPONENT devel DEPENDS "hipblas-common-dev >= ${hipblas_common_minimum}")
+  rocm_package_add_rpm_dependencies(COMPONENT devel DEPENDS "hipblas-common-devel >= ${hipblas_common_minimum}")
+else()
+  rocm_package_add_deb_dependencies(COMPONENT devel DEPENDS "hipblas-common-static-dev >= ${hipblas_common_minimum}")
+  rocm_package_add_rpm_dependencies(COMPONENT devel DEPENDS "hipblas-common-static-devel >= ${hipblas_common_minimum}")
+endif()
 
 set( CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE.md" )
 set( CPACK_RPM_PACKAGE_LICENSE "MIT")
 
 if (WIN32)
-  SET( CMAKE_INSTALL_PREFIX "C:/hipSDK" CACHE PATH "Install path" FORCE )
+  if( CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT )
+    SET( CMAKE_INSTALL_PREFIX "C:/hipSDK" CACHE PATH "Install path" FORCE )
+  endif()
   SET( INSTALL_PREFIX "C:/hipSDK" )
   SET( CPACK_SET_DESTDIR FALSE )
   SET( CPACK_PACKAGE_INSTALL_DIRECTORY "C:/hipSDK" )
@@ -283,25 +290,27 @@ if(BUILD_CODE_COVERAGE)
   # Prepare coverage output
   # This little script is generated because the option '--gcov-tool <program name>' of lcov cannot take arguments.
   #
-  add_custom_target(coverage_output
+
+  # source path substitute adjustment only for CI
+  get_filename_component(PARENT_DIR ${CMAKE_SOURCE_DIR} DIRECTORY)
+  get_filename_component(GRANDPARENT_DIR ${PARENT_DIR} DIRECTORY)
+  set(base_path "/var/jenkins_home/library")
+  set(hash_path "${CMAKE_SOURCE_DIR}/library")
+  message(STATUS "BASE ${base_path} to HASHED ${hash_path}")
+
+  add_custom_target(coverage
     DEPENDS coverage_analysis
     COMMAND mkdir -p lcoverage
     COMMAND echo "\\#!/bin/bash" > llvm-gcov.sh
     COMMAND echo "\\# THIS FILE HAS BEEN GENERATED" >> llvm-gcov.sh
     COMMAND printf "exec /opt/rocm/llvm/bin/llvm-cov gcov $$\\@" >> llvm-gcov.sh
     COMMAND chmod +x llvm-gcov.sh
+    COMMAND lcov --ignore-errors unused --directory . --base-directory "${CMAKE_SOURCE_DIR}" --gcov-tool ./llvm-gcov.sh --capture --substitute "'s#${base_path}#${hash_path}#g'" -o ./lcoverage/raw_main_coverage.info
+    COMMAND lcov --ignore-errors unused --remove ./lcoverage/raw_main_coverage.info "'/opt/*'" "'/usr/*'" -o ./lcoverage/main_coverage.info
+    COMMAND genhtml --ignore-errors source ./lcoverage/main_coverage.info --output-directory ./lcoverage --prefix ${CMAKE_SOURCE_DIR}
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
     )
 
-  #
-  # Generate coverage output.
-  #
-  add_custom_command(TARGET coverage_output
-    COMMAND lcov --directory . --base-directory . --gcov-tool ${CMAKE_BINARY_DIR}/llvm-gcov.sh --capture -o lcoverage/raw_main_coverage.info
-    COMMAND lcov --remove lcoverage/raw_main_coverage.info "'/opt/*'" "'/usr/*'" -o lcoverage/main_coverage.info
-    COMMAND genhtml lcoverage/main_coverage.info --output-directory lcoverage
-    )
-
-  add_custom_target(coverage DEPENDS coverage_output)
 
   #
   # Coverage cleanup
