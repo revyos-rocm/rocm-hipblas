@@ -1,5 +1,5 @@
 /* ************************************************************************
- * Copyright (C) 2016-2024 Advanced Micro Devices, Inc. All rights reserved.
+ * Copyright (C) 2016-2025 Advanced Micro Devices, Inc. All rights reserved.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -43,6 +43,7 @@ inline void testname_trsm_ex(const Arguments& arg, std::string& name)
 template <typename T>
 void testing_trsm_ex_bad_arg(const Arguments& arg)
 {
+    using Ts             = hipblas_internal_type<T>;
     bool FORTRAN         = arg.api == hipblas_client_api::FORTRAN;
     auto hipblasTrsmExFn = FORTRAN ? hipblasTrsmExFortran : hipblasTrsmEx;
 
@@ -56,7 +57,7 @@ void testing_trsm_ex_bad_arg(const Arguments& arg)
     hipblasFillMode_t  uplo        = HIPBLAS_FILL_MODE_LOWER;
     hipblasOperation_t transA      = HIPBLAS_OP_N;
     hipblasDiagType_t  diag        = HIPBLAS_DIAG_NON_UNIT;
-    hipblasDatatype_t  computeType = arg.compute_type;
+    hipDataType        computeType = arg.compute_type;
 
     int64_t K        = side == HIPBLAS_SIDE_LEFT ? M : N;
     int64_t invAsize = TRSM_BLOCK * K;
@@ -67,10 +68,10 @@ void testing_trsm_ex_bad_arg(const Arguments& arg)
     device_vector<T> dinvA(TRSM_BLOCK, TRSM_BLOCK, K);
 
     device_vector<T> d_alpha(1), d_zero(1);
-    const T          h_alpha(1), h_zero(0);
+    const Ts         h_alpha{1}, h_zero{0};
 
-    const T* alpha = &h_alpha;
-    const T* zero  = &h_zero;
+    const Ts* alpha = &h_alpha;
+    const Ts* zero  = &h_zero;
 
     for(auto pointer_mode : {HIPBLAS_POINTER_MODE_HOST, HIPBLAS_POINTER_MODE_DEVICE})
     {
@@ -181,7 +182,7 @@ void testing_trsm_ex_bad_arg(const Arguments& arg)
                                               ldb,
                                               dinvA,
                                               invAsize,
-                                              HIPBLAS_R_16F),
+                                              HIP_R_16F),
                               HIPBLAS_STATUS_NOT_SUPPORTED);
 
         EXPECT_HIPBLAS_STATUS(hipblasTrsmExFn(handle,
@@ -308,6 +309,7 @@ void testing_trsm_ex_bad_arg(const Arguments& arg)
 template <typename T>
 void testing_trsm_ex(const Arguments& arg)
 {
+    using Ts             = hipblas_internal_type<T>;
     bool FORTRAN         = arg.api == hipblas_client_api::FORTRAN;
     auto hipblasTrsmExFn = FORTRAN ? hipblasTrsmExFortran : hipblasTrsmEx;
 
@@ -430,7 +432,7 @@ void testing_trsm_ex(const Arguments& arg)
                                             diag,
                                             M,
                                             N,
-                                            &h_alpha,
+                                            reinterpret_cast<Ts*>(&h_alpha),
                                             dA,
                                             lda,
                                             dB,
